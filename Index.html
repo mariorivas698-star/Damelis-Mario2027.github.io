@@ -633,22 +633,49 @@
     });
   }
 
-  // ---- RSVP -> WhatsApp ----
+ // ---- RSVP -> Google Sheets (lista de invitados en Excel/Sheets) ----
+  // 1) Reemplaza la URL de abajo por la de tu Google Apps Script Web App.
+  //    Instrucciones completas en el mensaje del chat donde se te entregó este archivo.
+  const GOOGLE_SCRIPT_URL = 'PEGA_AQUI_TU_URL_DE_GOOGLE_APPS_SCRIPT';
+
   document.getElementById('rsvpForm').addEventListener('submit', function(e){
     e.preventDefault();
     const nombre = document.getElementById('nombre').value;
     const asistencia = document.getElementById('asistencia').value;
-    const acompanantes = document.getElementById('acompanantes').value;
     const mensaje = document.getElementById('mensaje').value;
+    const submitBtn = this.querySelector('.submit-btn');
+    const thanksEl = document.getElementById('rsvpThanks');
+    const errorEl = document.getElementById('rsvpError');
 
-    let texto = `Confirmación de asistencia%0A%0ANombre: ${encodeURIComponent(nombre)}%0AAsistencia: ${encodeURIComponent(asistencia)}%0AAcompañantes: ${encodeURIComponent(acompanantes)}`;
-    if(mensaje){ texto += `%0AMensaje: ${encodeURIComponent(mensaje)}`; }
+    thanksEl.classList.remove('show');
+    errorEl.classList.remove('show');
 
-    const telefono = '18099021519'; // [Reemplazar con el número de WhatsApp de los novios, con código de país]
-    const url = `https://wa.me/${telefono}?text=${texto}`;
+    if(GOOGLE_SCRIPT_URL.indexOf('PEGA_AQUI') !== -1){
+      errorEl.textContent = 'Aún falta conectar el formulario a la hoja de cálculo (ver instrucciones).';
+      errorEl.classList.add('show');
+      return;
+    }
 
-    document.getElementById('rsvpThanks').classList.add('show');
-    window.open(url, '_blank');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Enviando...';
+
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ nombre, asistencia, mensaje, fecha: new Date().toISOString() })
+    })
+    .then(() => {
+      thanksEl.classList.add('show');
+      this.reset();
+    })
+    .catch(() => {
+      errorEl.classList.add('show');
+    })
+    .finally(() => {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Enviar confirmación';
+    });
   });
 </script>
 
